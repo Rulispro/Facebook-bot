@@ -1,0 +1,20 @@
+name: Run Facebook Bot
+
+on:
+  schedule:
+    - cron: "0 4 * * *"  # Jalan setiap hari jam 4 pagi
+  workflow_dispatch:  # Bisa dijalankan manual
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: npm install puppeteer
+
+      - name: Run Facebook Bot
+        run: node backend/index.js autolike
