@@ -1,0 +1,31 @@
+name: Facebook Bot Scheduler
+
+on:
+  schedule:
+    # Jalankan bot setiap jam untuk mengecek IndexedDB
+    - cron: "0 * * * *"
+  workflow_dispatch:  # Bisa dijalankan manual dari GitHub
+
+jobs:
+  check-and-run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔹 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🔹 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 🔹 Install dependencies
+        run: npm install
+
+      - name: 🔹 Ambil Jam Terpilih dari IndexedDB
+        id: get_hours
+        run: node get_hours.js  # Script untuk ambil jam posting
+
+      - name: 🔹 Jalankan Bot Jika Jam Sesuai
+        if: contains(steps.get_hours.outputs.currentHour, 'true')  # Hanya jalan jika jam terpilih
+        run: node index.js
