@@ -1,33 +1,44 @@
 const fs = require("fs");
 
-module.exports = async function (page, groupLinks, postData, postingHours) {
-    console.log(`🔹 Mulai autoposting ke grup...`);
+module.exports = async function (page, groupURL, text, mediaBase64) {
+    console.log(`🔹 Posting ke grup: ${groupURL}...`);
+    
+    await page.goto(groupURL);
+    await page.waitForTimeout(5000);
 
-    for (let group of groupLinks) {
-        let currentHour = new Date().getHours();
-        if (!postingHours.includes(`${currentHour}:00`)) {
-            console.log(`⏳ Bukan jam yang dipilih (${currentHour}:00), menunggu...`);
-            continue;
-        }
+    // Cek apakah bisa posting (ada input status)
+    let postBox = await page.$("div[role='textbox']");
+    if (!postBox) {
+        console.log("❌ Tidak bisa memposting di grup ini.");
+        return;
+    }
 
-        console.log(`📌 Posting ke grup: ${group}`);
-        await page.goto(group);
-        await page.waitForTimeout(5000);
+    // Klik input status
+    await postBox.click();
+    await page.waitForTimeout(3000);
 
-        await page.type("div[role='textbox']", postData.caption);
-        
-        let fileInput = await page.$("input[type='file']");
-        if (fileInput && postData.imagePath) {
-            await fileInput.uploadFile(postData.imagePath);
-            await page.waitForTimeout(3000);
-        }
+    // Ketik teks status
+    await page.keyboard.type(text, { delay: 50 });
+    await page.waitForTimeout(3000);
 
-        let publishButton = await page.$x("//span[contains(text(), 'Kirim')]/ancestor::div[contains(@role, 'button')]");
-        if (publishButton.length > 0) {
-            await publishButton[0].click();
-            console.log("✅ Postingan berhasil.");
-        }
+    // Simpan media Base64 ke file sementara
+    let mediaType = mediaBase64.startsWith("data:image/") ? "image.jpg" : "video.mp4";
+    let mediaData = mediaBase64.replace(/^data:(image|video)\/\w+;base64,/, "");
+    fs.writeFileSync(mediaType, mediaData, { encoding: "base64" });
 
+    // Upload media
+    let fileInput = await page.$("input[type='file']");
+    if (fileInput) {
+        await fileInput.uploadFile(mediaType);
         await page.waitForTimeout(5000);
     }
+
+    // Klik tombol "Kirim" atau "Posting"
+    let postButton = await page.$x("//span[contains(text(), 'Kirim') or contains(text(), 'Posting')]/ancestor::div[contains(@role, 'button')]");
+    if (postButton.length > 0) {
+        await postButton[0].click();
+        console.log("✅ Posting berhasil.");
+    }
+
+    await page.waitForTimeout(5000);
 };
