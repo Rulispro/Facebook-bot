@@ -1,20 +1,73 @@
-name: Run Facebook Bot
+name: Facebook Bot Automation
 
 on:
   schedule:
-    - cron: "0 4 * * *"  # Jalan setiap hari jam 4 pagi
-  workflow_dispatch:  # Bisa dijalankan manual
+    - cron: '0 4-23 * * *' # Menjalankan bot setiap jam 04:00 - 23:00 (untuk posting di jam terpilih)
+    - cron: '0 0 * * *' # Menjalankan bot setiap tengah malam untuk fitur harian
+  workflow_dispatch: # Bisa dijalankan manual dari GitHub
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: npm install puppeteer
+        run: |
+          npm install puppeteer fs
 
-      - name: Run Facebook Bot
-        run: node backend/index.js autolike
+      # **🔹 Autolike Beranda (Maks 120 per hari)**
+      - name: Run Autolike
+        run: node scripts/autolike.js
+        continue-on-error: true
+
+      # **🔹 Autounfriend (Maks 50 per hari)**
+      - name: Run Autounfriend
+        run: node scripts/autounfriend.js
+        continue-on-error: true
+
+      # **🔹 Autoaddfriend (Maks 50 per hari)**
+      - name: Run Autoaddfriend
+        run: node scripts/autoaddfriend.js
+        continue-on-error: true
+
+      # **🔹 Autoconfirm (Maks 50 per hari)**
+      - name: Run Autoconfirm
+        run: node scripts/autoconfirm.js
+        continue-on-error: true
+
+      # **🔹 Autoaddfriend dari Postingan (Maks 50 per hari)**
+      - name: Run Autoaddfriend Link Post
+        run: node scripts/autoaddfriend_linkpost.js
+        continue-on-error: true
+
+      # **🔹 Scrape Nama Grup Facebook (Maks 100 per hari)**
+      - name: Run Scrape Groups
+        run: node scripts/scrape_groups.js
+        continue-on-error: true
+
+      # **🔹 Autojoin Grup dari Excel (Maks 100 per hari)**
+      - name: Run Autojoin
+        run: node scripts/autojoin.js
+        continue-on-error: true
+
+  autoposting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          npm install puppeteer fs
+
+      # **🔹 Autoposting Grup (Jam Sesuai Checkbox)**
+      - name: Run Autoposting Group
+        run: node scripts/autopostgroup.js
+        continue-on-error: true
+
+      # **🔹 Facebook Marketplace Posting (Jam Sesuai Checkbox)**
+      - name: Run Marketplace Posting
+        run: node scripts/marketplace.js
+        continue-on-error: true
