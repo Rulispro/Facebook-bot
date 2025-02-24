@@ -2,8 +2,7 @@ name: Facebook Bot Scheduler
 
 on:
   schedule:
-    # Jalankan bot setiap jam untuk mengecek IndexedDB
-    - cron: "0 * * * *"
+    - cron: "0 * * * *"  # Jalankan setiap jam untuk cek IndexedDB
   workflow_dispatch:  # Bisa dijalankan manual dari GitHub
 
 jobs:
@@ -22,10 +21,18 @@ jobs:
       - name: 🔹 Install dependencies
         run: npm install
 
-      - name: 🔹 Ambil Jam Terpilih dari IndexedDB
+      - name: 🔹 Ambil Jam Terpilih dari IndexedDB (Untuk Autoposting & Marketplace)
         id: get_hours
-        run: node get_hours.js  # Script untuk ambil jam posting
+        run: |
+          echo "currentHour=$(node get_hours.js)" >> $GITHUB_ENV
 
-      - name: 🔹 Jalankan Bot Jika Jam Sesuai
-        if: contains(steps.get_hours.outputs.currentHour, 'true')  # Hanya jalan jika jam terpilih
-        run: node index.js
+      - name: 🔹 Jalankan Fitur Harian (Autolike, Unfriend, Add Friend, dsb.)
+        run: node daily_tasks.js  # Menjalankan fitur harian yang akan berhenti jika batas tercapai
+
+      - name: 🔹 Jalankan Bot Posting Grup (autoposting.js)
+        if: env.currentHour == 'true'
+        run: node autoposting.js
+
+      - name: 🔹 Jalankan Bot Marketplace (marketplace.js)
+        if: env.currentHour == 'true'
+        run: node marketplace.js
