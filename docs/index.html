@@ -46,7 +46,9 @@
     <input type="number" id="maxIntervalAddFriend" placeholder="Masukkan waktu maksimal (3 menit)">
     <button onclick="startAutoAddFriend()">Start</button>
     <button onclick="stopAutoAddFriend()">Stop</button>
-
+    
+ <p>saat tombol autounfriend start, autoaddfriend, auto confirm,autolinkpost ga jalan </p>
+    
     <h3>Autoconfirm</h3>
     <input type="number" id="confirmInterval" placeholder="Masukkan waktu minimal (5 detik)">
     <button onclick="startAutoConfirm()">Start</button>
@@ -54,8 +56,8 @@
 
     <h3>Autoposting Grup</h3>
     <input type="text" id="groupLink" placeholder="Masukkan link grup Facebook">
-    <input type="file" id="groupMedia">
-    <textarea id="groupCaption" placeholder="Masukkan text"></textarea>
+    <input type="file" id="groupMedia" placeholder="Masukkan foto/">
+    <textarea id="groupCaption" placeholder="Masukkan text caption"></textarea>
     <input type="number" id="postInterval" placeholder="Masukkan waktu minimal 5 detik">
     <button onclick="addGroupLink()">Tambah Link Grup</button>
 
@@ -76,10 +78,11 @@
 
     <h3>Scrape Nama Grup</h3>
     <input type="text" id="scrapeGroupName" placeholder="Masukkan nama grup">
+ <input type="text" id="Excel" placeholder="Masukkan link excel">
     <button onclick="startScrapeGroups()">Start</button>
 
     <h3>Autojoin Grup</h3>
-    <input type="file" id="groupExcel">
+    <input type="file" id="groupExcel" placeholder="masukkan link excel">
     <button onclick="startAutoJoin()">Start</button>
 
     <h3>Facebook Marketplace</h3>
@@ -91,7 +94,7 @@
         <option value="create/housing for rent">Properti</option>
     </select>
 
-    <h4>Pilih Jam Posting Marketplace</h4>
+    <h4>Pilih Jam Posting Marketplace pilih 7 checkbox</h4>
     <div id="marketplacePostingHours">
         <!-- Generate checkbox jam berurutan -->
         <script>
