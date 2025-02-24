@@ -4,10 +4,13 @@ function openDB() {
         let request = indexedDB.open("FacebookBotDB", 1);
         request.onupgradeneeded = function (event) {
             let db = event.target.result;
-            if (!db.objectStoreNames.contains("settings")) db.createObjectStore("settings", { keyPath: "id" });
-            if (!db.objectStoreNames.contains("accounts")) db.createObjectStore("accounts", { autoIncrement: true });
-            if (!db.objectStoreNames.contains("groupPosts")) db.createObjectStore("groupPosts", { autoIncrement: true });
-            if (!db.objectStoreNames.contains("marketplacePhotos")) db.createObjectStore("marketplacePhotos", { autoIncrement: true });
+            let stores = ["settings", "accounts", "groupPosts", "marketplacePhotos"];
+
+            stores.forEach(store => {
+                if (!db.objectStoreNames.contains(store)) {
+                    db.createObjectStore(store, { keyPath: store === "settings" ? "id" : undefined, autoIncrement: store !== "settings" });
+                }
+            });
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
@@ -20,11 +23,8 @@ async function saveSelectedHours() {
     let transaction = db.transaction("settings", "readwrite");
     let store = transaction.objectStore("settings");
 
-    let postingHours = getCheckedHours("postingHours");
-    let marketplaceHours = getCheckedHours("marketplacePostingHours");
-
-    store.put({ id: "postingHours", hours: postingHours });
-    store.put({ id: "marketplaceHours", hours: marketplaceHours });
+    store.put({ id: "postingHours", hours: getCheckedHours("postingHours") });
+    store.put({ id: "marketplaceHours", hours: getCheckedHours("marketplacePostingHours") });
 
     alert("Jam posting disimpan!");
 }
@@ -38,12 +38,11 @@ async function saveCookies() {
         let parsedCookies = JSON.parse(cookieInput);
         let db = await openDB();
         let transaction = db.transaction("accounts", "readwrite");
-        let store = transaction.objectStore("accounts");
+        transaction.objectStore("accounts").add(parsedCookies);
 
-        store.add(parsedCookies);
         alert("Cookies berhasil disimpan!");
         loadAccounts();
-    } catch (e) {
+    } catch {
         alert("Format cookies tidak valid!");
     }
 }
@@ -51,19 +50,10 @@ async function saveCookies() {
 // 🔹 Muat akun dari IndexedDB ke dropdown
 async function loadAccounts() {
     let db = await openDB();
-    let transaction = db.transaction("accounts", "readonly");
-    let store = transaction.objectStore("accounts");
-    let accounts = await store.getAll();
+    let accounts = await db.transaction("accounts", "readonly").objectStore("accounts").getAll();
 
     let dropdown = document.getElementById("accountDropdown");
-    dropdown.innerHTML = "";
-
-    accounts.forEach((acc, index) => {
-        let option = document.createElement("option");
-        option.value = index;
-        option.textContent = `Akun ${index + 1}`;
-        dropdown.appendChild(option);
-    });
+    dropdown.innerHTML = accounts.map((_, i) => `<option value="${i}">Akun ${i + 1}</option>`).join("");
 }
 
 // 🔹 Simpan caption & media untuk Autopost Grup
@@ -79,7 +69,7 @@ async function saveGroupPost() {
 
     if (fileInput) {
         let reader = new FileReader();
-        reader.onload = function (event) {
+        reader.onload = event => {
             store.add({ caption, media: event.target.result });
             alert("Caption dan media berhasil disimpan!");
         };
@@ -96,12 +86,9 @@ async function saveMarketplacePhoto() {
     if (!fileInput) return alert("Pilih gambar terlebih dahulu!");
 
     let reader = new FileReader();
-    reader.onload = async function (event) {
+    reader.onload = async event => {
         let db = await openDB();
-        let transaction = db.transaction("marketplacePhotos", "readwrite");
-        let store = transaction.objectStore("marketplacePhotos");
-
-        store.add({ image: event.target.result });
+        db.transaction("marketplacePhotos", "readwrite").objectStore("marketplacePhotos").add({ image: event.target.result });
         alert("Gambar berhasil disimpan ke Marketplace!");
     };
     reader.readAsDataURL(fileInput);
@@ -113,4 +100,9 @@ function getCheckedHours(id) {
 }
 
 // 🔹 Jalankan saat halaman dimuat
-document.addEventListener("DOMContentLoaded", loadAccounts);
+document.addEventListener("DOMContentLoaded", () => {
+    loadAccounts();
+    document.querySelectorAll("#postingHours input, #marketplacePostingHours input").forEach(input => {
+        input.addEventListener("change", saveSelectedHours);
+    });
+});
